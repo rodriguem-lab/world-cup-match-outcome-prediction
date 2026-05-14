@@ -1,0 +1,35 @@
+
+DATA SUMMARY
+
+Total matches after cleaning: 29910
+
+Date range:
+1990-01-14 00:00:00 to 2024-03-26 00:00:00
+
+Train period:
+1990-01-14 00:00:00 to 2021-12-31 00:00:00
+Train size: 27588
+
+Test period:
+2022-01-01 00:00:00 to 2024-03-26 00:00:00
+Test size: 2322
+
+Target meaning:
+0 = home team loses
+1 = draw
+2 = home team wins
+
+Class distribution train:
+0    0.278019
+1    0.236190
+2    0.485791
+Name: proportion, dtype: float64
+
+Class distribution test:
+0    0.295004
+1    0.227390
+2    0.477606
+Name: proportion, dtype: float64
+
+Features used:
+['home_win_rate_5', 'home_draw_rate_5', 'home_loss_rate_5', 'home_goals_scored_avg_5', 'home_goals_conceded_avg_5', 'home_goal_diff_avg_5', 'away_win_rate_5', 'away_draw_rate_5', 'away_loss_rate_5', 'away_goals_scored_avg_5', 'away_goals_conceded_avg_5', 'away_goal_diff_avg_5', 'win_rate_difference', 'goal_diff_difference', 'neutral', 'is_world_cup', 'is_friendly']

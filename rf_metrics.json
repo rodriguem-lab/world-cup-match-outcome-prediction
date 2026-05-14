@@ -1,0 +1,66 @@
+{
+  "model_name": "Random Forest",
+  "best_params": {
+    "n_estimators": 250,
+    "max_depth": 8,
+    "min_samples_leaf": 1
+  },
+  "validation_accuracy": 0.5351576658209496,
+  "test_accuracy": 0.529285099052541,
+  "test_precision_macro": 0.348695897573003,
+  "test_recall_macro": 0.41609964041167263,
+  "test_f1_macro": 0.3641046491158264,
+  "test_precision_weighted": 0.40608071252828903,
+  "test_recall_weighted": 0.529285099052541,
+  "test_f1_weighted": 0.4436817112686483,
+  "confusion_matrix": [
+    [
+      251,
+      0,
+      434
+    ],
+    [
+      108,
+      0,
+      420
+    ],
+    [
+      131,
+      0,
+      978
+    ]
+  ],
+  "classification_report": {
+    "Home loss": {
+      "precision": 0.5122448979591837,
+      "recall": 0.36642335766423356,
+      "f1-score": 0.4272340425531915,
+      "support": 685.0
+    },
+    "Draw": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 528.0
+    },
+    "Home win": {
+      "precision": 0.5338427947598253,
+      "recall": 0.8818755635707844,
+      "f1-score": 0.6650799047942877,
+      "support": 1109.0
+    },
+    "accuracy": 0.529285099052541,
+    "macro avg": {
+      "precision": 0.348695897573003,
+      "recall": 0.41609964041167263,
+      "f1-score": 0.3641046491158264,
+      "support": 2322.0
+    },
+    "weighted avg": {
+      "precision": 0.40608071252828903,
+      "recall": 0.529285099052541,
+      "f1-score": 0.4436817112686483,
+      "support": 2322.0
+    }
+  }
+}
