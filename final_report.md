@@ -145,6 +145,7 @@ max_depth = 2
 
 ## 5. Data Science Results
 
+
 The models were evaluated on the chronological test set from 2022 onward.
 
 | Model | Accuracy | Macro F1 | Weighted F1 |
@@ -155,29 +156,15 @@ The models were evaluated on the chronological test set from 2022 onward.
 | Random Forest | 52.93% | 0.3641 | 0.4437 |
 | Gradient Boosting | 52.93% | 0.3697 | 0.4481 |
 
-Confusion matrices were saved in:
+The project outputs were saved as follows:
 
 ```text
 confusion_matrices.png
-```
-
-Accuracy comparison chart:
-
-```text
 accuracy_comparison.png
-```
-
-Feature importance plot:
-
-```text
 feature_importance.png
-```
-
-```markdown
-The class level performance report was saved in:
-
-```text
 classification_report_by_class.csv
+logistic_regression_coefficients.csv
+```
 
 The naive benchmark achieved 47.76% accuracy and a macro F1 score of 0.2155. Logistic Regression improved accuracy to 53.10% and macro F1 to 0.3739. This means that the model adds predictive value beyond simply predicting the most frequent outcome.
 
@@ -186,7 +173,16 @@ Among the machine learning models, Logistic Regression achieved the highest accu
 The class level report gives a clearer view of model performance. For the champion Logistic Regression model, home wins are the easiest class to identify, with a recall of 0.858 and an F1 score of 0.665. Home losses are predicted with moderate quality, with a recall of 0.407 and an F1 score of 0.450. Draws are the main weakness of the project: the champion model reaches only 0.004 recall and 0.007 F1 score for this class.
 
 This means that the model mostly learns to separate home wins from home losses, while draws remain almost invisible. This is not surprising in football because draws can arise from very different situations: balanced teams, defensive matches, low scoring games or inefficient finishing. It also explains why overall accuracy alone is not enough to evaluate the model.
-Top boosting feature importances:
+
+The champion Logistic Regression model gives a coherent interpretation of the final selected model. Since the numerical features were standardized before training, the largest absolute coefficients indicate which variables are most strongly associated with each predicted class.
+
+For home wins, the strongest signals are related to the away team recent form and the comparison between both teams. A higher win_rate_difference and a higher goal_diff_difference increase the probability of a home win, while stronger away team form reduces it. This is consistent with football intuition: the model mainly uses recent relative strength to separate home wins from the other outcomes.
+
+For home losses, the largest coefficients also point to relative team form. A weaker home profile and stronger away indicators push the prediction toward a home loss. Variables such as home_goals_conceded_avg_5, win_rate_difference, and goal_diff_difference are especially informative for this class.
+
+For draws, the coefficients are much smaller. This confirms the result observed in the class level performance report: draws are not well separated by the current features. The model does not find a strong and stable pattern that clearly identifies draw outcomes.
+
+Complementary Gradient Boosting feature importances:
 
 | Feature | Importance |
 | --- | ---: |
@@ -199,9 +195,7 @@ Top boosting feature importances:
 | away_goals_scored_avg_5 | 0.0227 |
 | home_goals_conceded_avg_5 | 0.0227 |
 
-The most important variable was the recent goal difference gap between the home
-and away team, which is intuitive because recent scoring strength and defensive
-performance are direct indicators of current form.
+The Gradient Boosting challenger also confirms the importance of relative goal difference. Its most important variable is goal_diff_difference, which captures the recent goal difference gap between the home and away teams. This supports the same general conclusion as the champion model: recent relative team strength is the main source of predictive signal.
 
 ## 6. Business and Application Results
 
@@ -235,6 +229,7 @@ player availability, rest days, travel distance, and betting market odds.
 This project built a complete chronological machine learning pipeline for
 international football outcome prediction. The final dataset contains 29,910
 matches and 17 engineered features based only on past information.
+
 The naive benchmark achieved 47.76% accuracy. Logistic Regression improved this result to 53.10%, with a macro F1 score of 0.3739. The tree based challengers were close, but they did not provide enough improvement to justify replacing the simpler champion model.
 
 The strongest predictive signal was the recent goal difference comparison between the two teams.

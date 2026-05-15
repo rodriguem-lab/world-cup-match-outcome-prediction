@@ -303,6 +303,8 @@ def write_model_comparison(metric_by_key):
 
     comparison = pd.DataFrame(rows).sort_values("accuracy", ascending=False)
     comparison.to_csv("model_comparison_table.csv", index=False)
+
+
 def write_classification_reports(metric_by_key):
     rows = []
 
@@ -326,6 +328,32 @@ def write_classification_reports(metric_by_key):
     report_table = pd.DataFrame(rows)
     report_table.to_csv("classification_report_by_class.csv", index=False)
 
+
+def write_logistic_regression_coefficients(model, feature_names):
+    rows = []
+
+    for row_index, class_label in enumerate(model.classes_):
+        class_position = CLASS_LABELS.index(class_label)
+        class_name = CLASS_NAMES[class_position]
+        coefficients = model.coef_[row_index]
+
+        for feature_name, coefficient in zip(feature_names, coefficients):
+            rows.append(
+                {
+                    "class": class_name,
+                    "feature": feature_name,
+                    "coefficient": coefficient,
+                    "abs_coefficient": abs(coefficient),
+                }
+            )
+
+    coefficients_table = pd.DataFrame(rows)
+    coefficients_table = coefficients_table.sort_values(
+        ["class", "abs_coefficient"],
+        ascending=[True, False],
+    )
+
+    coefficients_table.to_csv("logistic_regression_coefficients.csv", index=False)
 def main():
     X_train, X_test, y_train, y_test, feature_names = load_inputs()
 
@@ -421,6 +449,7 @@ def main():
     plot_feature_importance(boosting_model, feature_names)
     write_model_comparison(metric_by_key)
     write_classification_reports(metric_by_key)
+    write_logistic_regression_coefficients(lr_model, feature_names)
 
     print("Model training and evaluation complete.")
     for name, metrics in metric_by_key.items():
