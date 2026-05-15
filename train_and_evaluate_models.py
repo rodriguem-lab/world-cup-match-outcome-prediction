@@ -303,7 +303,28 @@ def write_model_comparison(metric_by_key):
 
     comparison = pd.DataFrame(rows).sort_values("accuracy", ascending=False)
     comparison.to_csv("model_comparison_table.csv", index=False)
+def write_classification_reports(metric_by_key):
+    rows = []
 
+    for model_name, metrics in metric_by_key.items():
+        report = metrics["classification_report"]
+
+        for class_name in CLASS_NAMES:
+            class_metrics = report[class_name]
+
+            rows.append(
+                {
+                    "model": model_name,
+                    "class": class_name,
+                    "precision": class_metrics["precision"],
+                    "recall": class_metrics["recall"],
+                    "f1_score": class_metrics["f1-score"],
+                    "support": class_metrics["support"],
+                }
+            )
+
+    report_table = pd.DataFrame(rows)
+    report_table.to_csv("classification_report_by_class.csv", index=False)
 
 def main():
     X_train, X_test, y_train, y_test, feature_names = load_inputs()
@@ -399,6 +420,7 @@ def main():
     plot_accuracy_comparison(metric_by_key)
     plot_feature_importance(boosting_model, feature_names)
     write_model_comparison(metric_by_key)
+    write_classification_reports(metric_by_key)
 
     print("Model training and evaluation complete.")
     for name, metrics in metric_by_key.items():
