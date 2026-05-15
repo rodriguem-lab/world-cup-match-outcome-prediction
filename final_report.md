@@ -173,11 +173,19 @@ Feature importance plot:
 feature_importance.png
 ```
 
+```markdown
+The class level performance report was saved in:
+
+```text
+classification_report_by_class.csv
+
 The naive benchmark achieved 47.76% accuracy and a macro F1 score of 0.2155. Logistic Regression improved accuracy to 53.10% and macro F1 to 0.3739. This means that the model adds predictive value beyond simply predicting the most frequent outcome.
 
 Among the machine learning models, Logistic Regression achieved the highest accuracy. Decision Tree, Random Forest, and Gradient Boosting were very close, yet none of them delivered a clear improvement over the champion model. For this reason, Logistic Regression remains the preferred model: it is slightly more accurate, simpler to explain, and more transparent.
 
-The confusion matrices show that all models predict home wins more easily than draws. This is an important limitation. Overall accuracy gives a useful first evaluation, but it can hide poor performance on the minority draw class.
+The class level report gives a clearer view of model performance. For the champion Logistic Regression model, home wins are the easiest class to identify, with a recall of 0.858 and an F1 score of 0.665. Home losses are predicted with moderate quality, with a recall of 0.407 and an F1 score of 0.450. Draws are the main weakness of the project: the champion model reaches only 0.004 recall and 0.007 F1 score for this class.
+
+This means that the model mostly learns to separate home wins from home losses, while draws remain almost invisible. This is not surprising in football because draws can arise from very different situations: balanced teams, defensive matches, low scoring games or inefficient finishing. It also explains why overall accuracy alone is not enough to evaluate the model.
 Top boosting feature importances:
 
 | Feature | Importance |
@@ -216,7 +224,7 @@ Limitations:
 - No injury, lineup, or fatigue data.
 - No FIFA rankings or Elo ratings.
 - No betting odds.
-- Draws are intrinsically difficult to predict.
+- Draws are the weakest class in the model, with almost zero recall in the current champion specification.
 - Football contains high randomness due to low scoring.
 
 Future improvements could include Elo ratings, FIFA rankings, squad strength,
