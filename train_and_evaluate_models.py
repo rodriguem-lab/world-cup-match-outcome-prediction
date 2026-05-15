@@ -22,6 +22,7 @@ from sklearn.metrics import (
     recall_score,
 )
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.dummy import DummyClassifier
 
 
 RANDOM_STATE = 42
@@ -110,6 +111,10 @@ def tune_model(model_factory, param_grid, X_train, y_train):
 
     return final_model, best_params, best_accuracy
 
+def train_most_frequent_baseline(X_train, y_train):
+    model = DummyClassifier(strategy="most_frequent")
+    model.fit(X_train, y_train)
+    return model, {"strategy": "most_frequent"}, None
 
 def train_logistic_regression(X_train, y_train):
     param_grid = [
@@ -190,11 +195,25 @@ def train_boosting_model(X_train, y_train):
 
 
 def plot_confusion_matrices(metric_by_key):
-    fig, axes = plt.subplots(2, 2, figsize=(12, 9), constrained_layout=True)
-    axes = axes.flatten()
+    n_models = len(metric_by_key)
+    n_cols = 2
+    n_rows = int(np.ceil(n_models / n_cols))
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(12, 4.5 * n_rows),
+        constrained_layout=True,
+    )
+
+    axes = np.array(axes).reshape(-1)
+
+    for axis in axes[n_models:]:
+        axis.axis("off")
 
     for axis, (title, metrics) in zip(axes, metric_by_key.items()):
         matrix = np.array(metrics["confusion_matrix"])
+
         image = axis.imshow(matrix, cmap="Blues")
         axis.set_title(title)
         axis.set_xlabel("Predicted label")
@@ -203,10 +222,18 @@ def plot_confusion_matrices(metric_by_key):
         axis.set_yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
 
         threshold = matrix.max() / 2
+
         for row in range(matrix.shape[0]):
             for col in range(matrix.shape[1]):
                 color = "white" if matrix[row, col] > threshold else "black"
-                axis.text(col, row, str(matrix[row, col]), ha="center", va="center", color=color)
+                axis.text(
+                    col,
+                    row,
+                    str(matrix[row, col]),
+                    ha="center",
+                    va="center",
+                    color=color,
+                )
 
         fig.colorbar(image, ax=axis, fraction=0.046, pad=0.04)
 
@@ -219,12 +246,15 @@ def plot_accuracy_comparison(metric_by_key):
     names = list(metric_by_key.keys())
     accuracies = [metric_by_key[name]["test_accuracy"] for name in names]
 
-    fig, axis = plt.subplots(figsize=(8, 5))
-    bars = axis.bar(names, accuracies, color=["#4c78a8", "#f58518", "#54a24b"])
+    fig, axis = plt.subplots(figsize=(9, 5))
+
+    bars = axis.bar(names, accuracies)
+
     axis.set_ylim(0, 1)
     axis.set_ylabel("Test accuracy")
     axis.set_title("Model Accuracy Comparison")
     axis.grid(axis="y", alpha=0.25)
+    axis.tick_params(axis="x", rotation=25)
 
     for bar, accuracy in zip(bars, accuracies):
         axis.text(
@@ -237,7 +267,6 @@ def plot_accuracy_comparison(metric_by_key):
 
     fig.savefig("accuracy_comparison.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
-
 
 def plot_feature_importance(model, feature_names):
     importances = getattr(model, "feature_importances_", None)
@@ -279,7 +308,25 @@ def write_model_comparison(metric_by_key):
 def main():
     X_train, X_test, y_train, y_test, feature_names = load_inputs()
 
-    lr_model, lr_params, lr_validation_accuracy = train_logistic_regression(X_train, y_train)
+    baseline_model, baseline_params, baseline_validation_accuracy = train_most_frequent_baseline(
+        X_train,
+        y_train,
+    )
+    baseline_predictions = baseline_model.predict(X_test)
+    baseline_metrics = metric_payload(
+        "Baseline: Most Frequent Class",
+        baseline_params,
+        y_test,
+        baseline_predictions,
+        baseline_validation_accuracy,
+    )
+    np.save("baseline_predictions.npy", baseline_predictions)
+    write_json("baseline_metrics.json", baseline_metrics)
+
+    lr_model, lr_params, lr_validation_accuracy = train_logistic_regression(
+        X_train,
+        y_train,
+    )
     lr_predictions = lr_model.predict(X_test)
     lr_metrics = metric_payload(
         "Logistic Regression",
@@ -291,7 +338,10 @@ def main():
     np.save("lr_predictions.npy", lr_predictions)
     write_json("lr_metrics.json", lr_metrics)
 
-    rf_model, rf_params, rf_validation_accuracy = train_random_forest(X_train, y_train)
+    rf_model, rf_params, rf_validation_accuracy = train_random_forest(
+        X_train,
+        y_train,
+    )
     rf_predictions = rf_model.predict(X_test)
     rf_metrics = metric_payload(
         "Random Forest",
@@ -303,7 +353,10 @@ def main():
     np.save("rf_predictions.npy", rf_predictions)
     write_json("rf_metrics.json", rf_metrics)
 
-    dt_model, dt_params, dt_validation_accuracy = train_decision_tree(X_train, y_train)
+    dt_model, dt_params, dt_validation_accuracy = train_decision_tree(
+        X_train,
+        y_train,
+    )
     dt_predictions = dt_model.predict(X_test)
     dt_metrics = metric_payload(
         "Decision Tree",
@@ -316,7 +369,8 @@ def main():
     write_json("dt_metrics.json", dt_metrics)
 
     boosting_model, boosting_params, boosting_validation_accuracy = train_boosting_model(
-        X_train, y_train
+        X_train,
+        y_train,
     )
     boosting_predictions = boosting_model.predict(X_test)
     boosting_metrics = metric_payload(
@@ -334,6 +388,7 @@ def main():
     write_json("xgb_metrics.json", boosting_metrics)
 
     metric_by_key = {
+        "Baseline": baseline_metrics,
         "Logistic Regression": lr_metrics,
         "Decision Tree": dt_metrics,
         "Random Forest": rf_metrics,
@@ -351,7 +406,6 @@ def main():
             f"{name}: accuracy={metrics['test_accuracy']:.4f}, "
             f"macro_f1={metrics['test_f1_macro']:.4f}"
         )
-
 
 if __name__ == "__main__":
     main()

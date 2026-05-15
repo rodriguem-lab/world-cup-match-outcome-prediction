@@ -23,6 +23,8 @@ The main research question is:
 This problem is relevant for sports analytics, betting market research, team
 strategy, fan engagement, and tournament forecasting.
 
+To make the evaluation more meaningful, the project also includes a naive benchmark. This benchmark always predicts the most frequent outcome observed in the training set. It gives us a simple reference point to check whether the machine learning models actually add predictive value.
+
 ## 2. Dataset Description and Preprocessing
 
 The project uses the Kaggle international football results dataset. The raw data
@@ -72,12 +74,10 @@ difference, comparative form differences, neutral venue, World Cup indicator,
 and friendly match indicator. Because every feature is computed from past
 matches only, the pipeline avoids data leakage.
 
-## 3. Champion Approach: Logistic Regression
+## 3. Benchmark and Champion Approach
+Before selecting the champion model, we evaluated a naive benchmark based on the most frequent class strategy. This model always predicts the outcome that appears most often in the training set. Since home wins are the most frequent class, the benchmark mainly shows how far a very simple rule can go without learning from the engineered features.
 
-Logistic Regression was selected as the champion baseline model because it is
-simple, fast, interpretable, and academically easy to explain. It learns a
-linear relationship between the engineered features and the probability of each
-match outcome.
+Logistic Regression was selected as the champion machine learning model because it is simple, fast, interpretable, and academically easy to explain. It learns a linear relationship between the engineered features and the probability of each match outcome.
 
 Strengths:
 
@@ -149,10 +149,11 @@ The models were evaluated on the chronological test set from 2022 onward.
 
 | Model | Accuracy | Macro F1 | Weighted F1 |
 | --- | ---: | ---: | ---: |
+| Baseline | 47.76% | 0.2155 | 0.3088 |
 | Logistic Regression | 53.10% | 0.3739 | 0.4517 |
+| Decision Tree | 52.89% | 0.3569 | 0.4371 |
 | Random Forest | 52.93% | 0.3641 | 0.4437 |
 | Gradient Boosting | 52.93% | 0.3697 | 0.4481 |
-| Decision Tree | 52.89% | 0.3569 | 0.4371 |
 
 Confusion matrices were saved in:
 
@@ -172,15 +173,11 @@ Feature importance plot:
 feature_importance.png
 ```
 
-The best model by accuracy was Logistic Regression. Decision Tree, Random
-Forest, and Gradient Boosting were extremely close, but did not clearly
-outperform the linear baseline. This supports the choice of Logistic Regression
-as the champion model: it is simpler, easier to explain, and slightly more
-accurate on the test set. The confusion matrices show that all models predict
-home wins much more easily than draws. This is an important limitation:
-optimizing for overall accuracy produces a useful baseline, but the minority
-draw class remains hard to capture.
+The naive benchmark achieved 47.76% accuracy and a macro F1 score of 0.2155. Logistic Regression improved accuracy to 53.10% and macro F1 to 0.3739. This means that the model adds predictive value beyond simply predicting the most frequent outcome.
 
+Among the machine learning models, Logistic Regression achieved the highest accuracy. Decision Tree, Random Forest, and Gradient Boosting were very close, yet none of them delivered a clear improvement over the champion model. For this reason, Logistic Regression remains the preferred model: it is slightly more accurate, simpler to explain, and more transparent.
+
+The confusion matrices show that all models predict home wins more easily than draws. This is an important limitation. Overall accuracy gives a useful first evaluation, but it can hide poor performance on the minority draw class.
 Top boosting feature importances:
 
 | Feature | Importance |
@@ -200,11 +197,9 @@ performance are direct indicators of current form.
 
 ## 6. Business and Application Results
 
-The results show that machine learning can capture part of the signal in
-international football outcomes, but the predictive ceiling is limited when
-using only historical match results and simple contextual indicators. Accuracy
-around 47-49% is still meaningfully above a random three-class classifier, but
-not strong enough to be used alone for high-risk betting decisions.
+The results show that machine learning can capture part of the signal in international football outcomes, but the predictive ceiling is limited when using only historical match results and simple contextual indicators.
+
+The champion model improves over the naive benchmark, moving from 47.76% to 53.10% accuracy. This is a real gain, but the model is still not strong enough to be used alone for high risk betting decisions.
 
 Potential applications:
 
@@ -232,10 +227,9 @@ player availability, rest days, travel distance, and betting market odds.
 This project built a complete chronological machine learning pipeline for
 international football outcome prediction. The final dataset contains 29,910
 matches and 17 engineered features based only on past information.
+The naive benchmark achieved 47.76% accuracy. Logistic Regression improved this result to 53.10%, with a macro F1 score of 0.3739. The tree based challengers were close, but they did not provide enough improvement to justify replacing the simpler champion model.
 
-Logistic Regression achieved the best test accuracy at 53.10%, while the
-tree-based challengers were close but slightly lower. The most important
-predictive signal was recent goal difference comparison between the two teams.
+The strongest predictive signal was the recent goal difference comparison between the two teams.
 
 The main conclusion is that football outcomes are partially predictable from
 historical form, but the sport remains highly uncertain. Better real-world
