@@ -1,0 +1,566 @@
+% Intended LaTeX compiler: pdflatex
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% ---------- Language / Fonts ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+
+% ---------- Math / Graphics ----------
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{array}
+
+% ---------- Theme ----------
+\usetheme{Boadilla}
+
+% Sorbonne colors
+\definecolor{SorbonneBlue}{RGB}{0,51,102}
+\definecolor{SorbonneGold}{RGB}{241,169,0}
+\definecolor{LightBlue}{RGB}{230,240,250}
+
+\setbeamercolor{frametitle}{fg=SorbonneGold, bg=SorbonneBlue}
+\setbeamercolor{frametitle right}{bg=SorbonneBlue}
+\setbeamercolor{block title}{bg=SorbonneBlue, fg=SorbonneGold}
+\setbeamercolor{block body}{bg=white, fg=black}
+\setbeamercolor{alerted text}{fg=SorbonneBlue}
+
+% ---------- CLEAN FOOTER ----------
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.6ex,dp=1.2ex,left]{author in head/foot}%
+      \hspace*{1em}\usebeamerfont{date in head/foot}\insertshortdate
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.6ex,dp=1.2ex,center]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.6ex,dp=1.2ex,right]{date in head/foot}%
+      \usebeamerfont{page number in head/foot}\insertframenumber{} / \inserttotalframenumber\hspace*{1em}
+    \end{beamercolorbox}%
+  }%
+  \vskip0pt%
+}
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamercolor{author in head/foot}{fg=white,bg=SorbonneBlue}
+\setbeamercolor{title in head/foot}{fg=SorbonneGold,bg=SorbonneBlue}
+\setbeamercolor{date in head/foot}{fg=white,bg=SorbonneBlue}
+
+% ---------- CUSTOM TITLE PAGE ----------
+\setbeamertemplate{title page}{
+  \begin{centering}
+    \vspace*{0.4cm}
+
+    % Logo — place a logo.png file next to this .tex, or remove these 2 lines
+    % \includegraphics[height=1.2cm]{logo}\par
+    % \vspace{0.45cm}
+
+    \begin{beamercolorbox}[wd=0.92\paperwidth,sep=14pt,center,rounded=true,shadow=false]{titlebox}
+      {\usebeamerfont{title}\color{SorbonneGold}\inserttitle\par}
+      \vspace{0.3em}
+      {\usebeamerfont{subtitle}\color{white}\insertsubtitle\par}
+    \end{beamercolorbox}
+
+    \vspace{0.7cm}
+
+    {\small
+    \begin{tabular}{c}
+      Rodrigue Mieuzet \quad\quad Melany Gipsy Moreno \quad\quad Nam Khanh Nguyen
+    \end{tabular}
+    \par}
+
+    \vspace{0.55cm}
+    {\footnotesize \insertinstitute\par}
+    \vspace{0.25cm}
+    {\footnotesize \insertdate\par}
+  \end{centering}
+}
+
+\setbeamercolor{titlebox}{bg=SorbonneBlue, fg=SorbonneGold}
+\setbeamerfont{title}{series=\bfseries,size=\Large}
+\setbeamerfont{subtitle}{series=\normalfont,size=\small}
+
+% TOC at each section start
+\AtBeginSection[]{
+  \begin{frame}{Outline}
+    \tableofcontents[currentsection,hideothersubsections]
+  \end{frame}
+}
+
+% ---------- Front matter ----------
+\title[WC Match Outcome Prediction]{World Cup Match Outcome Prediction}
+\subtitle{A Machine Learning Approach}
+\author{Rodrigue MIEUZET \and Melany Gipsy MORENO \and Nam Khanh NGUYEN}
+\institute{Machine Learning --- Final Project}
+\date{\today}
+
+% =============================================================
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% =============================================================
+\section{Problem Statement}
+% =============================================================
+
+\begin{frame}{Problem Statement}
+  \begin{block}{Goal}
+    Predict the outcome of any international football match ---
+    a \textbf{3-class classification} problem.
+  \end{block}
+
+  \medskip
+  \begin{center}
+    \begin{tabular}{cl}
+      \toprule
+      \textbf{Class} & \textbf{Meaning} \\
+      \midrule
+      0 & Home team loses \\
+      1 & Draw \\
+      2 & Home team wins \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{alertblock}{Why is it hard?}
+    \begin{itemize}
+      \item Low-scoring sport $\Rightarrow$ high outcome variance per match
+      \item Unobservable factors: injuries, lineups, tactics, fatigue
+      \item Draws ($\approx$23\%) are rare and structurally difficult to predict
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Why Macro F1 --- Not Accuracy}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{block}{Naive baseline}
+        Always predict \textbf{home win} \\[4pt]
+        \quad Accuracy $= 47.76\%$ \\
+        \quad Macro F1 $= 0.22$ \quad (\textit{useless})
+      \end{block}
+      \medskip
+      A model that only predicts ``home win'' achieves \textbf{zero recall}
+      on draws and losses.
+
+    \column{0.48\textwidth}
+      \begin{block}{Primary metric: Macro F1}
+        Gives \textbf{equal weight} to all three classes.\\[4pt]
+        \[
+          \text{Macro F1} = \frac{F1_0 + F1_1 + F1_2}{3}
+        \]
+      \end{block}
+      \medskip
+      Combined with \texttt{class\_weight="balanced"}, this forces
+      the model to genuinely predict draws.
+  \end{columns}
+\end{frame}
+
+% =============================================================
+\section{Dataset}
+% =============================================================
+
+\begin{frame}{Dataset}
+  \textbf{Two sources from Kaggle:}
+
+  \medskip
+  \begin{center}
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Source} & \textbf{Rows} & \textbf{Coverage} \\
+      \midrule
+      International results (\texttt{results.csv}) & 29\,819 matches & 1990--2024 \\
+      FIFA World Rankings & 67\,472 entries & 1992--2024, 216 teams \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \textbf{Train / Test split --- strictly chronological at 2022-01-01:}
+
+  \begin{center}
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Split} & \textbf{Period} & \textbf{Size} \\
+      \midrule
+      Train & 1990--2021 & $\approx$25\,000 matches \\
+      Test  & 2022--2024 & $\approx$1\,600 matches \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \begin{alertblock}{No leakage guarantee}
+    No future data enters training. Test window includes the Qatar 2022
+    World Cup and the disrupted post-COVID international schedule.
+  \end{alertblock}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Class Distribution}
+  Moderate imbalance --- \textbf{consistent} between train and test:
+
+  \medskip
+  \begin{center}
+    \begin{tabular}{lcc}
+      \toprule
+      \textbf{Outcome} & \textbf{Train} & \textbf{Test} \\
+      \midrule
+      Home loss (0) & 27.80\% & 29.50\% \\
+      Draw (1) & 23.61\% & 22.74\% \\
+      \rowcolor{LightBlue}
+      Home win (2) & 48.59\% & 47.76\% \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{block}{Naive baseline}
+        Always predict home win \\
+        Accuracy $= 47.76\%$ \quad Macro F1 $= 0.22$
+      \end{block}
+    \column{0.48\textwidth}
+      \begin{block}{Fix applied}
+        \texttt{class\_weight="balanced"} on \textbf{all} models
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% =============================================================
+\section{Feature Engineering}
+% =============================================================
+
+\begin{frame}{Feature Engineering --- 29 Features}
+  \textit{All features computed from data available \textbf{before} match kick-off.}
+
+  \medskip
+  \begin{center}
+    \begin{tabular}{llc}
+      \toprule
+      \textbf{Group} & \textbf{Content} & \textbf{Count} \\
+      \midrule
+      \rowcolor{LightBlue}
+      Elo ratings & Home Elo, Away Elo (self-computed) & 2 \\
+      Rolling form & Win/draw rate, goals (last 5 games, by venue) & 16 \\
+      \rowcolor{LightBlue}
+      FIFA rankings & Rank + points per team (as-of join) & 4 \\
+      Head-to-head & Home team win/draw rate vs this opponent & 2 \\
+      \rowcolor{LightBlue}
+      Rest / fatigue & Days since last match per team & 2 \\
+      Match context & Neutral ground, World Cup, Friendly & 3 \\
+      \midrule
+      & \textbf{Total} & \textbf{29} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Elo Ratings --- The Key Enabler}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \begin{block}{How Elo works}
+        \begin{itemize}
+          \item Every team starts at 1500
+          \item After each match:
+          \[
+            \Delta = K\,(S_h - E_h)
+          \]
+          \[
+            E_h = \frac{1}{1 + 10^{(R_a - R_h - 100)/400}}
+          \]
+          \item K-factor: \textbf{40} WC, \textbf{30} competitive, \textbf{15} friendly
+          \item $+100$ bonus for home team (non-neutral ground)
+        \end{itemize}
+      \end{block}
+
+    \column{0.46\textwidth}
+      \begin{block}{Why it matters}
+        Elo difference is a \textbf{linear predictor} of win probability
+        in log-odds space.\\[5pt]
+        Logistic Regression captures this with 2 coefficients.\\[5pt]
+        Tree models need \textit{many splits} to approximate the same signal.
+      \end{block}
+
+      \medskip
+      \begin{alertblock}{Progressive gain (Macro F1)}
+        \begin{tabular}{lc}
+          Form only (17 feat.) & 0.430 \\
+          + Rankings, H2H, rest & 0.486 \\
+          \textbf{+ Elo (29 feat.)} & \textbf{0.498} \\
+        \end{tabular}
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Rolling Form \& Other Features}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{block}{Rolling form (16 features)}
+        \begin{itemize}
+          \item Tracked \textbf{separately} by venue (home / away)
+          \item 5-game rolling window with \texttt{shift(1)} \\
+                $\Rightarrow$ no leakage into current match
+          \item Per team: win rate, draw rate, goals scored, goals conceded
+        \end{itemize}
+      \end{block}
+
+    \column{0.48\textwidth}
+      \begin{block}{FIFA rankings (4 features)}
+        As-of join: most recent ranking \textit{on or before} the match date.
+        Missing teams ($\approx$13\%) imputed to median rank (102\textsuperscript{nd}).
+      \end{block}
+      \smallskip
+      \begin{block}{Head-to-head (2 features)}
+        Home team's cumulative win/draw rate vs the specific away team,
+        expanding mean with \texttt{shift(1)}.
+      \end{block}
+      \smallskip
+      \begin{block}{Rest / fatigue (2 features)}
+        Days since last match per team --- proxy for schedule congestion.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% =============================================================
+\section{Models \& Methodology}
+% =============================================================
+
+\begin{frame}{Models Trained}
+  \begin{center}
+    \begin{tabular}{ll}
+      \toprule
+      \textbf{Model} & \textbf{Key characteristic} \\
+      \midrule
+      Baseline (Most Frequent) & Always predicts home win \\
+      \rowcolor{LightBlue}
+      \textbf{Logistic Regression} $\star$ & Linear, interpretable, \texttt{class\_weight="balanced"} \\
+      Random Forest & 250--400 trees, depth 8--12, ensemble averaging \\
+      \rowcolor{LightBlue}
+      Decision Tree & Single tree depth 4--10, fully auditable \\
+      Gradient Boosting & 120--220 shallow trees, sequential residual fitting \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{block}{Validation protocol}
+    \begin{itemize}
+      \item Hyperparameter search: chronological 80/20 inner split, scored by \textbf{Macro F1}
+      \item Model stability: \textbf{walk-forward CV} (test years 2019, 2020, 2021) \\
+            Scaler refit inside each fold $\Rightarrow$ no future-data leakage in scaling
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% =============================================================
+\section{Results}
+% =============================================================
+
+\begin{frame}{Results}
+  \begin{center}
+    \begin{tabular}{lcccc}
+      \toprule
+      \textbf{Model} & \textbf{Accuracy} & \textbf{Macro F1}
+        & \textbf{CV Macro F1} & \textbf{vs LR ($p$)} \\
+      \midrule
+      \rowcolor{LightBlue}
+      \textbf{LR} $\star$ & 53.14\% & \textbf{0.498} & $0.530 \pm 0.050$ & --- \\
+      Random Forest & \textbf{54.26\%} & 0.496 & $0.517 \pm 0.056$ & $0.13$ (n.s.) \\
+      Gradient Boosting & 53.32\% & 0.496 & $\mathbf{0.533 \pm 0.045}$ & $0.86$ (n.s.) \\
+      Decision Tree & 51.55\% & 0.477 & $0.501 \pm 0.055$ & $0.09$ (n.s.) \\
+      \midrule
+      Naive Baseline & 47.76\% & 0.216 & --- & --- \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \begin{alertblock}{McNemar's test (exact, two-sided)}
+        LR, RF, and Gradient Boosting are \textbf{statistically indistinguishable}.
+        Decision Tree is significantly weaker than the ensembles ($p = 0.001$ vs RF).
+      \end{alertblock}
+    \column{0.40\textwidth}
+      \begin{block}{Gain over baseline}
+        All models: $+0.28$ Macro F1 \\
+        $= +130\%$ improvement
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Per-class Performance --- Logistic Regression}
+  \begin{center}
+    \begin{tabular}{lccc}
+      \toprule
+      \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+      \midrule
+      Home loss (0) & $\approx$0.49 & $\approx$0.57 & $\approx$0.53 \\
+      \rowcolor{LightBlue}
+      Draw (1) & $\approx$0.32 & $\approx$0.34 & $\approx$0.33 \\
+      Home win (2) & $\approx$0.65 & $\approx$0.55 & $\approx$0.60 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \begin{alertblock}{Draws --- the hardest class}
+        Recall $\approx 34\%$: model still misses \textbf{2 out of 3} draws.
+        Structural consequence of football's inherent randomness at balanced
+        quality levels.
+      \end{alertblock}
+    \column{0.46\textwidth}
+      \begin{block}{Key improvement}
+        \texttt{class\_weight="balanced"} + Macro F1 tuning: \\[4pt]
+        \centering
+        Draw recall: $\approx 0\%\ \longrightarrow\ \approx 34\%$
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Why Logistic Regression is the Champion}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \begin{block}{1 --- Performance}
+        Statistically equivalent to RF and Gradient Boosting \\
+        (McNemar $p > 0.05$ in both cases)
+      \end{block}
+      \smallskip
+      \begin{block}{2 --- Interpretability}
+        Coefficients are stable and auditable:\\[4pt]
+        \small\textit{``France wins because their Elo exceeds the opponent's by 200 points
+        and their away form is strong.''}
+      \end{block}
+      \smallskip
+      \begin{block}{3 --- Deployability}
+        No calibration step needed; fast inference; legible coefficients.
+      \end{block}
+
+    \column{0.46\textwidth}
+      \begin{alertblock}{RF and Gradient Boosting}
+        \begin{itemize}
+          \item Cannot explain individual predictions
+          \item Require Platt scaling for calibrated probabilities
+          \item Offer \textbf{zero measurable advantage} over LR
+        \end{itemize}
+      \end{alertblock}
+
+      \bigskip
+      \begin{center}
+        \textit{``A more complex model\\that performs the same\\is simply wrong.''}
+      \end{center}
+  \end{columns}
+\end{frame}
+
+% =============================================================
+\section{Key Findings \& Limitations}
+% =============================================================
+
+\begin{frame}{Key Findings}
+  \begin{enumerate}
+    \item \textbf{Feature design $>$ model choice}\\
+          Adding Elo ratings (2 features) closed the performance gap between
+          Logistic Regression and ensemble models entirely.
+
+    \bigskip
+    \item \textbf{Metric design shapes model behaviour}\\
+          Switching from accuracy $\to$ Macro F1 + class balancing raised draw
+          recall from $\approx$0\% to $\approx$34\%.
+
+    \bigskip
+    \item \textbf{Complexity does not imply performance}\\
+          RF and Gradient Boosting can approximate arbitrary non-linear functions.
+          With the right features, Logistic Regression matches them completely ---
+          while remaining fully interpretable.
+  \end{enumerate}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Limitations \& Next Steps}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{alertblock}{Current limitations}
+        \begin{itemize}
+          \item No live data (lineups, injuries, travel)
+          \item Elo warm-up $\approx$ 3 years for new/rare teams
+          \item Draw recall $\approx 34\%$: model misses 2/3 draws
+          \item Test window (2022--2024) atypically disrupted \\
+                (post-COVID, mid-season Qatar WC)
+        \end{itemize}
+      \end{alertblock}
+
+    \column{0.48\textwidth}
+      \begin{block}{Possible improvements}
+        \begin{itemize}
+          \item Player-level features (squad rating, key absences)
+          \item Periodic retraining as football evolves
+          \item XGBoost with larger hyperparameter grids
+          \item Monte Carlo bracket simulation using calibrated RF probabilities
+        \end{itemize}
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% =============================================================
+\section{Conclusion}
+% =============================================================
+
+\begin{frame}{Conclusion}
+  \begin{center}
+    \begin{tabular}{ll}
+      \toprule
+      \textbf{Design decision} & \textbf{Impact} \\
+      \midrule
+      Elo ratings & Enabled LR to match ensemble models \\
+      Macro F1 + class balancing & Draw recall $0\% \to 34\%$ \\
+      Walk-forward CV & Validated temporal stability \\
+      McNemar's tests & Confirmed champion selection statistically \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{block}{Champion: Logistic Regression}
+    \centering
+    Equal performance \quad$\cdot$\quad Full interpretability \quad$\cdot$\quad Zero calibration cost
+  \end{block}
+
+  \medskip
+  \begin{center}
+    \large
+    Macro F1 $= 0.498$ \quad vs \quad Baseline $= 0.216$ \\[4pt]
+    $\Rightarrow$ \textbf{+130\% improvement over the naive baseline}
+  \end{center}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}[plain]
+  \begin{center}
+    \vspace{1.8cm}
+    {\Huge \textbf{Thank you}}\\[1.2cm]
+    \large
+    \texttt{src/data\_pipeline.py} \hfill Feature engineering\\[3pt]
+    \texttt{src/train\_evaluate.py} \hfill Models, CV, significance tests\\[3pt]
+    \texttt{outputs/reports/final\_report.md} \hfill Full written analysis
+  \end{center}
+\end{frame}
+
+\end{document}
