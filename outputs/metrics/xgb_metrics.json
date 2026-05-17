@@ -1,0 +1,67 @@
+{
+  "model_name": "Gradient Boosting",
+  "best_params": {
+    "n_estimators": 120,
+    "learning_rate": 0.05,
+    "max_depth": 2
+  },
+  "validation_macro_f1": 0.5238682947764981,
+  "test_accuracy": 0.533161068044789,
+  "test_precision_macro": 0.49552773947854756,
+  "test_recall_macro": 0.4987210229961147,
+  "test_f1_macro": 0.4955017519903575,
+  "test_precision_weighted": 0.5458118639958386,
+  "test_recall_weighted": 0.533161068044789,
+  "test_f1_weighted": 0.5376371877378607,
+  "confusion_matrix": [
+    [
+      405,
+      158,
+      122
+    ],
+    [
+      190,
+      155,
+      183
+    ],
+    [
+      183,
+      248,
+      678
+    ]
+  ],
+  "classification_report": {
+    "Home loss": {
+      "precision": 0.5205655526992288,
+      "recall": 0.5912408759124088,
+      "f1-score": 0.5536568694463432,
+      "support": 685.0
+    },
+    "Draw": {
+      "precision": 0.27629233511586454,
+      "recall": 0.2935606060606061,
+      "f1-score": 0.2846648301193756,
+      "support": 528.0
+    },
+    "Home win": {
+      "precision": 0.6897253306205493,
+      "recall": 0.6113615870153292,
+      "f1-score": 0.6481835564053537,
+      "support": 1109.0
+    },
+    "accuracy": 0.533161068044789,
+    "macro avg": {
+      "precision": 0.49552773947854756,
+      "recall": 0.4987210229961147,
+      "f1-score": 0.4955017519903575,
+      "support": 2322.0
+    },
+    "weighted avg": {
+      "precision": 0.5458118639958386,
+      "recall": 0.533161068044789,
+      "f1-score": 0.5376371877378607,
+      "support": 2322.0
+    }
+  },
+  "note": "sklearn GradientBoostingClassifier used as fallback (xgboost unavailable)."
+}
