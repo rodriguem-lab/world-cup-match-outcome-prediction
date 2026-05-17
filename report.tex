@@ -1,0 +1,548 @@
+% Intended LaTeX compiler: pdflatex
+\documentclass[12pt,a4paper,openany]{report}
+
+% =====================================================
+% PACKAGES
+% =====================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}[chapter]
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{csquotes}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{enumitem}
+\usepackage{threeparttable}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{array}
+
+% =====================================================
+% PAGE SETUP
+% =====================================================
+\geometry{
+    left=3cm,
+    right=3cm,
+    top=3cm,
+    bottom=3cm
+}
+
+\setstretch{1.35}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue,
+    pdfborder={0 0 0}
+}
+
+% =====================================================
+% TITLE SPACING
+% =====================================================
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries}
+{\chaptertitlename\ \thechapter}
+{10pt}
+{\Huge}
+
+\titlespacing*{\chapter}
+{0pt}{-35pt}{15pt}
+
+\titleformat{\section}
+{\large\bfseries}
+{\thesection}
+{0.8em}
+{}
+
+\titlespacing*{\section}
+{0pt}{1.0em}{0.5em}
+
+\titleformat{\subsection}
+{\normalsize\bfseries}
+{\thesubsection}
+{0.8em}
+{}
+
+\titlespacing*{\subsection}
+{0pt}{0.8em}{0.4em}
+
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=1.3em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=1.5em}
+
+\definecolor{LightBlue}{RGB}{230,240,250}
+
+% =====================================================
+\begin{document}
+
+% =====================================================
+% TITLE PAGE
+% =====================================================
+\begin{titlepage}
+    \centering
+
+    {\Large\bfseries World Cup Match Outcome Prediction\par}
+    \vspace{0.3cm}
+    {\large A Machine Learning Approach\par}
+
+    \vspace{1.2cm}
+
+    % Uncomment and place a logo.png next to this file if needed:
+    % \includegraphics[width=0.6\textwidth]{logo.png}\par
+    % \vspace{1cm}
+
+    {\Large Machine Learning --- Final Project\par}
+    \vspace{0.2cm}
+    {\large Master's Programme\par}
+
+    \vspace{1.2cm}
+
+    {\large \textbf{Authors:}\par}
+    \vspace{0.3cm}
+    {\large Rodrigue Mieuzet\par}
+    {\large Melany Gipsy Moreno\par}
+    {\large Nam Khanh Nguyen\par}
+
+    \vspace{1.2cm}
+
+    {\large \textbf{Instructor:} Mr.\ Hassani\par}
+
+    \vfill
+
+    {\large \today\par}
+\end{titlepage}
+
+% =====================================================
+% TABLE OF CONTENTS
+% =====================================================
+\tableofcontents
+\newpage
+
+% =====================================================
+\chapter{Problem Definition}
+% =====================================================
+
+Football match outcome prediction is a three-class classification task. For any
+given international match, we want to predict one of:
+
+\begin{center}
+\begin{tabular}{cl}
+  \toprule
+  \textbf{Class} & \textbf{Meaning} \\
+  \midrule
+  0 & Home team loses \\
+  1 & Draw \\
+  2 & Home team wins \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+This is inherently difficult. Football is a low-scoring sport with high outcome
+variance: a single set piece or red card can flip a result regardless of
+underlying team quality. Factors that matter most --- injuries, lineup changes,
+tactical choices, fatigue, referee decisions, psychological pressure --- are
+either unavailable in structured data or unquantifiable before kick-off.
+
+\medskip
+\textbf{What a good model looks like.} The naive baseline always predicts the most
+frequent class (home win, 47.76\% of the test set). Any model that merely learns
+``home teams usually win'' will achieve $\approx$48\% accuracy but fail entirely on losses
+and draws. We therefore reject accuracy as our primary metric and adopt
+\textbf{macro F1}, which gives equal weight to all three classes. A model with macro
+F1 of 0.22 (the naive baseline) adds no value; one above 0.45 is genuinely
+discriminative.
+
+% =====================================================
+\chapter{Dataset}
+% =====================================================
+
+\section{Sources}
+
+Two datasets are used:
+
+\begin{itemize}
+  \item \textbf{Kaggle international football results} (\texttt{results.csv}): 29,819 matches
+  from 1990-01-14 to 2024-03-26 covering all major international competitions.
+  Each row records date, home team, away team, scores, tournament name, and
+  whether the match was played on neutral ground.
+
+  \item \textbf{Kaggle FIFA World Ranking} (\texttt{fifa\_ranking-2024-06-20.csv}): 67,472 rows
+  covering 216 teams from 1992-12-31 to 2024-06-20. Rankings update roughly
+  monthly. Columns used: \texttt{rank\_date}, \texttt{country\_full}, \texttt{rank}, \texttt{total\_points}.
+\end{itemize}
+
+\section{Class Imbalance}
+
+The target is moderately imbalanced:
+
+\begin{center}
+\begin{tabular}{lccc}
+  \toprule
+  \textbf{Split} & \textbf{Home loss} & \textbf{Draw} & \textbf{Home win} \\
+  \midrule
+  Train (1990--2021) & 27.80\% & 23.61\% & 48.59\% \\
+  Test (2022--2024)  & 29.50\% & 22.74\% & 47.76\% \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+Home wins are roughly twice as frequent as draws. This imbalance is structural
+(home advantage is real in football) and consistent between splits, which is
+a good sign. However, if not handled explicitly, any model will over-predict
+home wins and essentially ignore draws --- the class that is both hardest to
+predict and most commercially interesting.
+
+\section{Train / Test Split}
+
+The split is \textbf{strictly chronological} at 2022-01-01: training on 1990--2021,
+testing on 2022--2024. This prevents any form of future-data leakage and mimics
+real deployment conditions. The 2022--2024 test window is intentionally
+challenging: it covers the post-COVID international schedule and the unusual
+mid-season Qatar World Cup, both of which disrupted normal preparation cycles.
+
+% =====================================================
+\chapter{Champion Approach --- Logistic Regression}
+% =====================================================
+
+\section{Why Logistic Regression}
+
+The champion model is \textbf{Logistic Regression}. The choice is motivated not by
+assumption but by the structure of the problem: football outcome probabilities
+are log-linearly related to team quality differences. When two teams are
+evenly matched in Elo rating, the log-odds of a home win are near zero; as the
+gap grows, log-odds shift proportionally. This is precisely the hypothesis
+encoded in a logistic model, and it turns out to hold empirically.
+
+The critical design decision was to engineer features that expose this linear
+structure --- specifically, Elo ratings --- so that LR can exploit it directly
+without needing non-linear approximations.
+
+\section{Feature Engineering (29 Features)}
+
+Every feature is computed from information available \textbf{before} the match date.
+
+\subsection{Elo Ratings (2 features)}
+
+A self-contained Elo system is built from \texttt{results.csv}. Every team starts at
+1500. After each match, ratings are updated based on the actual result versus
+the expected result (computed from the pre-match rating gap):
+
+\[
+  \Delta = K \cdot (S_h - E_h), \qquad
+  E_h = \frac{1}{1 + 10^{(R_a - R_h - 100)/400}}
+\]
+
+Parameters: $K = 40$ for World Cup matches, $K = 30$ for competitive matches,
+$K = 15$ for friendlies. A $+100$ Elo bonus is applied to the home team when
+computing the expected score on non-neutral ground. The recorded features ---
+\texttt{home\_elo} and \texttt{away\_elo} --- are the pre-match ratings, capturing each
+team's dynamically updated strength across their entire competitive history.
+
+Elo is the feature that elevates LR. Because Elo difference is an
+approximately linear predictor of win probability in log-odds space, logistic
+regression can represent the team quality signal with a single pair of
+coefficients --- something tree-based models must approximate through many splits.
+
+\subsection{Rolling Form (16 features)}
+
+For each team and each venue type (home / away), we compute a 5-game rolling
+window of win rate, draw rate, goals scored, and goals conceded. Home-game and
+away-game records are tracked separately, capturing the asymmetry in team
+performance by venue. The \texttt{shift(1)} before the window ensures the current
+match is never included in its own features.
+
+\subsection{FIFA Rankings (4 features)}
+
+\texttt{home\_ranking}, \texttt{away\_ranking}, \texttt{home\_points}, and \texttt{away\_points} joined via
+an as-of merge: each match receives the team's most recent published ranking
+on or before the match date. While Elo captures dynamic form, FIFA rankings
+reflect accumulated prestige over a longer horizon and provide complementary
+signal. Teams absent from the ranking ($\approx$13\% of rows) are imputed to the median
+rank (102\textsuperscript{nd}).
+
+\subsection{Head-to-Head Record (2 features)}
+
+The home team's historical win rate and draw rate against the specific away
+team, computed as a cumulative expanding mean with \texttt{shift(1)}. Only the home
+team's perspective is retained --- the away team's win rate is the arithmetic
+complement and perfectly collinear.
+
+\subsection{Rest and Schedule (2 features)}
+
+Days elapsed since each team's most recent previous match, as a proxy for
+fatigue and preparation time.
+
+\subsection{Match Context (3 features)}
+
+Binary flags for neutral venue (\texttt{neutral}), FIFA World Cup (\texttt{is\_world\_cup}),
+and friendly (\texttt{is\_friendly}).
+
+\section{Handling Class Imbalance}
+
+\texttt{class\_weight="balanced"} re-weights the logistic loss function so minority
+classes count proportionally more. This is what allows the champion to
+maintain meaningful recall on draws and home losses without sacrificing overall
+macro F1.
+
+\section{Tuning and Validation Protocol}
+
+Hyperparameter selection (regularisation strength $C \in \{0.1, 0.3, 1.0, 3.0\}$)
+uses a chronological 80/20 inner split of the training set, scored by macro
+F1. Model stability is assessed with walk-forward cross-validation (test years
+2019, 2020, 2021), refitting the scaler inside each fold to prevent leakage.
+The 2022+ window is the final held-out test set, never touched during training
+or CV.
+
+% =====================================================
+\chapter{Challenger Models}
+% =====================================================
+
+Three challenger models were trained on the same 29 features and evaluated
+against the champion. Their role is to verify that Logistic Regression is not
+leaving performance on the table.
+
+\section{Random Forest}
+
+Ensemble of 250--400 trees with limited depth (8--12 levels) and minimum leaf
+sizes of 1--3. Ensemble averaging reduces variance and naturally handles
+non-linear interactions between features --- something LR cannot do by
+construction.
+
+\medskip
+\textbf{Finding:} RF achieves the highest raw accuracy (54.26\%) and a test macro F1
+of 0.4962, marginally below LR (0.4983). McNemar's test confirms they are
+\textbf{statistically indistinguishable} ($p = 0.13$). RF is more computationally
+expensive, harder to interpret, and requires calibration for reliable
+probability estimates --- yet it offers no measurable accuracy advantage over the
+champion. Its parity with LR is the strongest single argument for the champion
+selection.
+
+\section{Gradient Boosting}
+
+Sequential boosting with 120--220 shallow trees (depth 2--3) and a low learning
+rate (0.03--0.10). Each tree corrects the residuals of the ensemble so far.
+Boosting is generally the strongest single-model approach for structured
+tabular data.
+
+\medskip
+\textbf{Finding:} GB leads in walk-forward CV ($0.533 \pm 0.045$) but achieves a test
+macro F1 of 0.4955, indistinguishable from LR ($p = 0.86$). Its marginal CV
+advantage disappears within standard deviation overlap. GB is the most opaque
+model tested: feature importance scores describe average usage across trees but
+cannot explain a specific prediction. No statistically significant
+gain over LR justifies the added complexity.
+
+\section{Decision Tree}
+
+A single decision tree with tuned depth (4--10 levels) and minimum leaf sizes
+(10--50 samples). The most interpretable challenger: every prediction can be
+traced to a specific decision path, making it fully auditable.
+
+\medskip
+\textbf{Finding:} DT is the only model significantly weaker than the ensembles
+($p = 0.001$ vs RF, $p = 0.048$ vs GB). Its test macro F1 of 0.4774 and CV score
+of $0.501 \pm 0.055$ confirm that single-tree structure lacks the capacity to
+approximate the joint interaction of Elo, form, and rankings. It provides
+interpretability at a meaningful performance cost --- which is exactly the
+tradeoff LR avoids. LR matches the ensembles on performance while equalling
+DT on interpretability.
+
+\section{Summary}
+
+\begin{center}
+\begin{tabular}{lcccc}
+  \toprule
+  \textbf{Model} & \textbf{Test Macro F1} & \textbf{CV Macro F1} & \textbf{vs LR ($p$)} \\
+  \midrule
+  \rowcolor{LightBlue}
+  \textbf{Logistic Regression} & \textbf{0.4983} & $0.530 \pm 0.050$ & --- \\
+  Random Forest & 0.4962 & $0.517 \pm 0.056$ & 0.13 (n.s.) \\
+  Gradient Boosting & 0.4955 & $0.533 \pm 0.045$ & 0.86 (n.s.) \\
+  Decision Tree & 0.4774 & $0.501 \pm 0.055$ & 0.09 (n.s.) \\
+  Naive Baseline & 0.2155 & --- & --- \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+LR, RF, and GB are statistically equivalent. Decision Tree is significantly
+weaker than the ensembles. No challenger outperforms the champion. Logistic
+Regression is therefore the correct choice: maximum performance with maximum
+interpretability.
+
+% =====================================================
+\chapter{Results --- Data Science Perspective}
+% =====================================================
+
+\section{Accuracy Is No Longer the Right Lens}
+
+All four models now exceed the naive accuracy baseline (47.76\%), which was not
+the case before data enrichment. More importantly, macro F1 exceeds 0.47 for
+all models --- more than double the naive baseline's 0.22. This jump came from
+three compounding decisions: macro-F1 tuning (not accuracy), class balancing,
+and progressive feature enrichment.
+
+\section{Feature Contribution by Enrichment Step}
+
+\begin{center}
+\begin{tabular}{lcc}
+  \toprule
+  \textbf{Feature set} & \textbf{Best test macro F1} & \textbf{Gain} \\
+  \midrule
+  Form + context (17 features) & 0.4300 & --- \\
+  + FIFA rankings, H2H, rest (27 features) & 0.4855 & $+0.0555$ \\
+  + Elo ratings (29 features) & 0.4983 & $+0.0128$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+FIFA rankings and Elo are the dominant signal sources. Form features capture
+recent-cycle variation that quality metrics smooth over. H2H and rest features
+add consistent but smaller incremental value.
+
+\section{Per-class Performance (Logistic Regression)}
+
+\begin{center}
+\begin{tabular}{lccc}
+  \toprule
+  \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+  \midrule
+  Home loss (0) & $\approx$0.49 & $\approx$0.57 & $\approx$0.53 \\
+  \rowcolor{LightBlue}
+  Draw (1) & $\approx$0.32 & $\approx$0.34 & $\approx$0.33 \\
+  Home win (2) & $\approx$0.65 & $\approx$0.55 & $\approx$0.60 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+Draws remain the hardest class. Draw recall of $\approx$34\% is a dramatic improvement
+over the near-zero recall of accuracy-tuned models, but it still means the
+model misses two out of three draws --- a structural reflection of football's
+inherent randomness at balanced quality levels. Home wins and losses are better
+predicted because the Elo gap is larger and the result more determined.
+
+\section{Walk-Forward CV and Temporal Stability}
+
+CV macro F1 ($\approx$0.53) consistently exceeds the test-set score ($\approx$0.50) for all
+models. This is most plausibly explained by the test window (2022--2024) being
+an atypically disrupted period --- post-COVID schedules and the mid-season World
+Cup --- rather than overfitting. The CV folds (2019--2021) represent more typical
+international football calendars.
+
+% =====================================================
+\chapter{Results --- Business and Application Perspective}
+% =====================================================
+
+\section{What Macro F1 $\approx$ 0.50 Means in Practice}
+
+A macro F1 of 0.50 means the model correctly identifies roughly half of all
+home losses, draws, and home wins --- each independently, not as a blended
+average. In a sport where professional tipsters rarely exceed 55\% accuracy on
+three-outcome markets, a calibrated probabilistic model at this performance
+level has genuine commercial utility.
+
+\section{Deployment Use Cases}
+
+\textbf{Tournament simulation.} The model's three-class probabilities can drive a
+Monte Carlo simulation of a tournament bracket. Each match is drawn from the
+predicted distribution; running thousands of simulations produces realistic
+finish-order distributions and upset probabilities. The Platt-scaled RF
+probabilities saved in \texttt{rf\_calibrated\_probs.npy} are suitable for this
+purpose --- raw \texttt{predict\_proba} outputs from tree models are often poorly
+calibrated near the extremes.
+
+\medskip
+\textbf{Pre-match odds benchmarking.} Bookmakers publish implied probabilities
+derived from their odds. The model's predicted probabilities can be compared
+against the market to identify systematic deviations --- matches where the model
+is confident and the market disagrees. This provides a principled starting
+point for quantitative sports analysis, though it requires careful backtesting
+and does not guarantee profitability.
+
+\medskip
+\textbf{Scouting and preparation support.} National team analysts can use the Elo
+ratings and form features to quantify how much home advantage matters for
+specific opponents, or to identify teams that are outperforming or
+underperforming their underlying quality. A rising Elo with declining FIFA
+ranking points, for instance, signals a team in better shape than their
+official standing suggests.
+
+\section{Why Interpretability Matters}
+
+In a business or editorial context, a prediction must be explainable. A
+journalist, federation official, or data analyst will ask: ``Why does the model
+give France a 65\% win probability?'' Logistic Regression answers this directly:
+because France's Elo exceeds their opponent's by $X$ points, their recent
+home-game form is strong, and this is a competitive fixture. The coefficient
+signs and magnitudes are stable and auditable.
+
+Random Forest and Gradient Boosting cannot provide this per-prediction
+narrative. This is why the champion choice is not merely a performance
+decision --- it is a deployability decision.
+
+\section{Limitations for Live Deployment}
+
+\begin{itemize}
+  \item \textbf{No live data.} The model uses only pre-match features. It knows nothing
+  about the starting lineup, injury list, or travel time --- information that
+  moves betting markets substantially in the hours before kick-off.
+
+  \item \textbf{Elo warm-up.} Ratings initialised at 1500 in 1990 require several years
+  to converge. Predictions for rarely-active or newly promoted nations will
+  be noisier than for established footballing countries.
+
+  \item \textbf{Non-stationarity.} Football evolves. The model should be retrained
+  periodically and monitored for degrading performance as tactical and
+  scheduling norms shift.
+
+  \item \textbf{Draws remain uncertain.} A draw recall of $\approx$34\% means the model misses
+  two out of three draws. Any product built around draw prediction should
+  communicate this uncertainty clearly to end users.
+\end{itemize}
+
+% =====================================================
+\chapter{Conclusion}
+% =====================================================
+
+This project built a complete, production-ready ML pipeline for international
+football outcome prediction. Three findings stand out.
+
+\medskip
+\textbf{Feature design determines champion selection.} Adding Elo ratings --- a
+per-match, self-contained quality signal computed from the same dataset --- was
+the single decision that enabled Logistic Regression to match ensemble methods.
+Without Elo, LR trailed RF and GB. With it, all three models became
+statistically indistinguishable, and the interpretability argument for LR
+became decisive.
+
+\medskip
+\textbf{Metric design determines model behaviour.} Switching from accuracy to macro
+F1 as the tuning objective --- and adding class balancing --- transformed draw
+recall from near-zero to $\approx$34\%. This is the difference between a model that
+pretends draws do not exist and one that can genuinely discriminate between
+all three outcomes. The right evaluation metric is not cosmetic; it reshapes
+the model's learned behaviour.
+
+\medskip
+\textbf{Complexity does not imply performance.} Random Forest and Gradient Boosting
+are more powerful model families than Logistic Regression by construction ---
+they can approximate arbitrary non-linear functions. Yet on this problem, with
+the right features, they offer no measurable advantage. The three challengers
+collectively confirm that the champion is not a compromise but the correct
+choice: equal performance, full interpretability, and lower inference cost.
+
+\end{document}
